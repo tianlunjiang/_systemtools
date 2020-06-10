@@ -23,11 +23,19 @@ TYPE_CONFIG = {
         'backplate': {'DIR': slate.NUKE_DIR, 'EXT': 'nk'},
         'lgtSlap': {'DIR': slate.NUKE_DIR, 'EXT': 'nk'},
         'breakdown': {'DIR': slate.NUKE_DIR, 'EXT': 'nk'}
-        }
+        },
+    'maya': {
+        'lgt':{'DIR': slate.MAYA_DIR, 'EXT': 'ma'},
+        'model':{'DIR': slate.MAYA_DIR, 'EXT': 'fbx'},
+        'lookdev':{'DIR': slate.MAYA_DIR, 'EXT': 'fbx'},
+        'rig':{'DIR': slate.MAYA_DIR, 'EXT': 'fbx'},
+        'anim':{'DIR': slate.MAYA_DIR, 'EXT': 'fbx'}
+    }
+
 }
 
 TYPE_NOPASSNAME={
-'nuke': ['mastercomp', 'backplate', 'lgtSlap', 'lookdev', 'breakdown']
+    'nuke': ['mastercomp', 'backplate', 'lgtSlap', 'lookdev', 'breakdown']
 }
 
 PADDING_VER, PADDING_FRAME = slate.SHOW_CONFIG['padding']

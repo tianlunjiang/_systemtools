@@ -1,0 +1,8 @@
+QComboBox#NewVersionStyle{
+    color: limegreen;
+    font: bold
+}
+
+QLabel#NewVersionStyle{
+    color: limegreen
+}

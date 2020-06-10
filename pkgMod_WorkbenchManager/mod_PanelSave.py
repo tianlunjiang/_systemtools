@@ -17,6 +17,7 @@ import os
 import re
 from Qt import QtWidgets, QtCore, QtGui
 from spt_kputl import *
+from spt_GuiFuncs import gui_save
 
 from spt_ui_PanelSave import Ui_PanelSave, __GUI__, __ACTION__
 
@@ -51,6 +52,7 @@ class Core_PanelSave(QtWidgets.QWidget):
         self.ui.setupUi(self)
         self.completer_passname = QtWidgets.QCompleter
         self.ui.selType.currentIndexChanged.connect(self.onSaveTypeChanged)
+        self.ui.version.currentIndexChanged.connect(self.onVersionChanged)
         self.ui.passname.currentIndexChanged.connect(self.onPassnameChanged)
         self.ui.passname.editTextChanged.connect(self.onPassnameEdited)
         self.ui.IOButton.clicked.connect(self.IOAction)
@@ -66,6 +68,7 @@ class Core_PanelSave(QtWidgets.QWidget):
         self.ui.passname.setEnabled(False)
         self.set_versionList()
         self.set_filename()
+        self.ui.version_label.setObjectName('NewVersionStyle')
 
     def onSaveTypeChanged(self):
         '''when save type changed'''
@@ -82,6 +85,22 @@ class Core_PanelSave(QtWidgets.QWidget):
         self.set_dirWorkbench()
         self.set_passnameList()
         self.set_versionList()
+        self.set_filename()
+
+    def onVersionChanged(self):
+        '''when version number is changed'''
+        c = self.sender()
+        _versionList = [int(c.itemText(i)) for i in range(c.count())]
+        _curVer = self.ui.get_selVersion()
+
+        if _versionList:
+            if _curVer == max(_versionList):
+                self.ui.version_label.setText('version <font color="#00cc66">(new)</>')
+                reloadCSS(self.ui.filename, "NewVersionStyle")
+            else:
+                self.ui.version_label.setText('version')
+                self.ui.filename.setStyleSheet("")
+
         self.set_filename()
 
     def onPassnameChanged(self):
@@ -180,15 +199,19 @@ class Core_PanelSave(QtWidgets.QWidget):
 
         return {'type_sel': _selType, 'type_full': _fullType, 'pass_list': _listPass}
 
-
     def IOAction(self):
         '''when IO button is pressed'''
         _dir = self.ui.get_dir()
         _file = self.ui.get_filename()
-        print(_dir+_file)
+        _filename = _dir+_file
+        if __name__ == '__main__':
+            print(_filename)
+        else:
+            gui_save(__GUI__, _filename)
 
     def run(self):
         '''run panel instance'''
+        self.setDefaults()
         self.show()
         self.raise_()
         self.ui.selType.setFocus()
@@ -205,6 +228,7 @@ class Core_PanelSave(QtWidgets.QWidget):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
+    setAppStyle(app)
     PanelSave = Core_PanelSave()
     PanelSave.run()
     app.exec_()

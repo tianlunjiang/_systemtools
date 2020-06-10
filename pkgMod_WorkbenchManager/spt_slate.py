@@ -30,6 +30,7 @@ if SHOW and SCENE and SHOT:
 
     NUKE_DIR = joinPath(SHOT_DIR, 'workbench', 'nuke/')
     MAYA_DIR = joinPath(SHOT_DIR, 'workbench', 'maya/scenes/')
+    GEOEXPORT_DIR = joinPath(SHOT_DIR, 'workbench', 'assets/geoExports/')
     BLENDER_DIR = joinPath(SHOT_DIR, 'workbench', 'blender/')
     PS_DIR = joinPath(SHOT_DIR, 'workbench', 'ps/')
     AE_DIR = joinPath(SHOT_DIR, 'workbench', 'ae/')

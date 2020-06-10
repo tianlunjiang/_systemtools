@@ -22,6 +22,8 @@ def joinPath(*paths):
 class ListVers(object):
     '''gets the list of versions
     @path: path to list (str)
+    @PADDING_VER: version padding (str)
+    @EXT: file extension (str)
     '''
 
     def __init__(self, path, PADDING_VER, EXT):
@@ -91,6 +93,35 @@ class ListVers(object):
         if len(_versions)==0:
             _versions=['1'.zfill(int(self.PADDING_VER))]
         else:
-            _versions
+            # add new version
+            _ver_new = max([int(v) for v in _versions])+1
+            _versions.append(str(_ver_new).zfill(int(self.PADDING_VER)))
 
         return _versions
+
+
+def reloadCSS(obj, cssName):
+    '''reload stylesheet
+    @obj: object to reload (obj)
+    @cssName: objectname for this obj (str)
+    '''
+
+    file_css = joinPath(os.path.dirname(__file__), 'style.stylesheet')
+    obj.setObjectName(cssName)
+    obj.setStyleSheet(open(file_css).read())
+
+
+def setAppStyle(obj):
+    '''sets the window style'''
+    from Qt import QtGui, QtWidgets
+    obj.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+    p=QtGui.QPalette()
+    p = obj.palette()
+    p.setColor(QtGui.QPalette.Window, QtGui.QColor(54, 54, 54))
+    p.setColor(QtGui.QPalette.WindowText, QtGui.QColor(200, 200, 200))
+    p.setColor(QtGui.QPalette.Text, QtGui.QColor(200, 200, 200))
+    p.setColor(QtGui.QPalette.Button, QtGui.QColor(54, 54, 54))
+    p.setColor(QtGui.QPalette.Highlight, QtGui.QColor(255, 168, 38))
+    p.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(200, 200, 200))
+    p.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(130, 130, 130))
+    obj.setPalette(p)

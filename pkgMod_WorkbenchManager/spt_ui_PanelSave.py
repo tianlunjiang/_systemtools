@@ -88,8 +88,12 @@ class Ui_PanelSave(object):
         self.passname.setEnabled(False)
         self.passname.setEditable(True)
         self.notes.setPlaceholderText('notes to add on save')
-        self.settings.setEnabled(False)
         self.slate.setText('show:scene:shot')
+
+        self.notes.setEnabled(False)
+        self.settings.setEnabled(False)
+        self.notes.setToolTip("Feature in working")
+        self.settings.setToolTip("Feature in working")
 
         # Layouts
         self.layout_title = QtWidgets.QVBoxLayout()
@@ -135,7 +139,7 @@ class Ui_PanelSave(object):
         # Window
         core.setLayout(self.layout_master)
         core.setWindowTitle('Workbench Manager')
-        core.setWindowFlags(QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.MSWindowsFixedSizeDialogHint)
+        core.setWindowFlags(QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.MSWindowsFixedSizeDialogHint | QtCore.Qt.WindowStaysOnTopHint)
 
         self.initilizeUi()
 
@@ -160,7 +164,10 @@ class Ui_PanelSave(object):
         '''get the selected version number
         return version number as integer (int)
         '''
-        return int(self.version.currentText())
+        try:
+            return int(self.version.currentText())
+        except:
+            pass
 
     def get_selVersionDisplay(self):
         '''get the selected version number
