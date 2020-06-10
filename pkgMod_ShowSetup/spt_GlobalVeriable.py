@@ -1,7 +1,7 @@
 import platform
 
 
-__VERSION__='0.1 (beta)'
+__VERSION__='0.2 (beta)'
 __OS__=platform.system()
 __AUTHOR__="Tianlun Jiang"
 __TITLE__='ShowSetup'

@@ -81,6 +81,7 @@ class Ui_ShowSetup(object):
         self.colorspace.setToolTip("OCIO config file full path")
         self.shotlist_label = QtWidgets.QLabel("shotlist")
 
+        ## Shotlist Widget
         self.shotlist = QtWidgets.QTableWidget()
         self.row_add = QtWidgets.QPushButton('+')
         # self.row_add.setMaximumWidth(40)
@@ -106,8 +107,11 @@ class Ui_ShowSetup(object):
         self.dir_showRoot.setStyleSheet("Text-align:left")
         self.dir_showRoot.setFlat(True)
         self.dir_showRoot.setToolTip("Click to edit")
+        self.previz = QtWidgets.QPushButton ('set previz')
+        self.previz.setMinimumHeight(30)
         self.setup = QtWidgets.QPushButton('SET')
         self.setup.setMinimumHeight(60)
+
 
         # Layouts
         self.layout_top = QtWidgets.QGridLayout()
@@ -142,6 +146,7 @@ class Ui_ShowSetup(object):
         self.layout_end = QtWidgets.QVBoxLayout()
         self.layout_end.addWidget(self.dir_template)
         self.layout_end.addWidget(self.dir_showRoot)
+        self.layout_end.addWidget(self.previz)
         self.layout_end.addWidget(self.setup)
 
         # Set layouts

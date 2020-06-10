@@ -17,9 +17,6 @@ def _version_():
 	version 0.1
 	- add show-level shot dir and config
 
-	version 0.2
-	- add previz dir setup
-
 	'''
 	return ver
 
@@ -79,25 +76,9 @@ class Core_ShowSetup(QtWidgets.QWidget):
 		# Buttons
 		self.ui.row_add.clicked.connect(self.edit_row)
 		self.ui.row_remove.clicked.connect(self.edit_row)
-		self.ui.previz.clicked.connect(self.set_previz)
 		self.ui.setup.clicked.connect(self.showSetup)
 
-		self.ui.showfullname.editingFinished.connect(self.onShowEdited)
-		self.ui.kp_show.editingFinished.connect(self.onShowEdited)
-
 		self.setDefaults()
-
-
-	def onShowEdited(self):
-		'''when showfullname and kp_show is edited'''
-
-		_showfullname = self.ui.get_showfullname()
-		_kp_show = self.ui.get_kp_show()
-
-		if len(_showfullname)>3 and len(_kp_show)==3:
-			self.ui.previz.setEnabled(True)
-		else:
-			self.ui.previz.setEnabled(False)
 
 	def edit_row(self):
 		'''add or remove rows'''
@@ -176,6 +157,9 @@ class Core_ShowSetup(QtWidgets.QWidget):
 		dir_shots = self.create_shotDirs(dir_show, _configData['dirTemplate'], _configShot)
 		self.create_configShotJSON(dir_shots, _configShot)
 
+
+
+
 	def setDefaults(self):
 		'''default value when instancing'''
 		self.ui.fps.setValue(24)
@@ -183,7 +167,6 @@ class Core_ShowSetup(QtWidgets.QWidget):
 		self.ui.colorspace.setText(GV.OCIO_PATH)
 		self.ui.handles.setValue(6)
 		self.ui.padding.setText('3,4')
-		self.ui.previz.setEnabled(False)
 
 		if 'upt_' in __file__:
 			from _TestDefaults_ import setTestValues
@@ -281,16 +264,6 @@ class Core_ShowSetup(QtWidgets.QWidget):
 				f.write(json_data)
 
 			print(thisShot+'/'+os.path.basename(thisFilename)+' --- created')
-
-	def set_previz(self):
-		'''set previz dir'''
-		_showfullname = self.ui.get_showfullname()
-		_kp_show = self.ui.get_kp_show()
-		_tempPrevizDir = os.path.join (self.ui.get_dirTemplate(), 'temp_previz').replace('\\', '/')
-		_previzDir = os.path.join (self.ui.get_dirShowRoot(), '%s_previz' % _kp_show).replace('\\', '/')
-
-		shutil.copytree(_tempPrevizDir, _previzDir)
-
 
 	def run(self):
 		'''run panel instance'''
