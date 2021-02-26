@@ -210,11 +210,17 @@ class RT_ListModel(QtCore.QAbstractListModel):
 		return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
 	def setData(self, index, item, role = QtCore.Qt.EditRole):
-		if role == QtCore.QtEditRole:
-			row = index.row()
-			self.data[row] = item
+		row = index.row()
+		if os.path.isdir(item): item+'/'
+		
+		if role == QtCore.Qt.EditRole:
+			self.ls_items[row] = item
 			self.dataChanged.emit(index, index)
 			return True
+
+		if role == QtCore.Qt.DecorationRole:
+			return self.get_os_icon(item)
+		
 		return False
 
 	def removeRows(self, row, count, parent = QtCore.QModelIndex()):
@@ -237,7 +243,7 @@ class RT_ListModel(QtCore.QAbstractListModel):
 		log.debug("Clear Item Check: " + str(self.get_items()))
 
 	def get_items(self):
-		'''return current list of items'''
+		'''return current list of items (fullpath)'''
 		return self.ls_items
 
 	def get_item_at(self, idx):
@@ -437,13 +443,16 @@ class RT_SequencialBox(QtWidgets.QWidget):
 				_item_fullpath_new = utl.joinPath(_item_dir, _item_name_new)
 
 				try:
-					log.debug("Fullpath Reconstruct: %s -> %s" % (item[1], _item_fullpath_new))
+					# log.debug("Fullpath Reconstruct: %s -> %s" % (item[1], _item_fullpath_new))
 					
-					# OS Rename File
+					# OS Rename
+					if os.getenv('KPENV') == 20:
+						os.rename(item, _item_fullpath_new)
+					
+					# Model Rename
+					self.listmodel.setData(self.listmodel.index(idx), _item_fullpath_new)
 
-					# Edit Data in listmodel
-
-					log.info("Renamed: %s -> %s" % (item[0], _item_name_new))
+					log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item[0], _item_name_new) + col.ENDLN)
 				except OSError as err:
 					log.error("Fail to rename: %s | %s" % (item[0], err))
 
@@ -581,9 +590,12 @@ class RT_SubstitutionalBox(QtWidgets.QWidget):
 					try:
 						# log.debug("Fullpath Reconstruct: %s -> %s" % (item[1], _item_fullpath_new))
 						
-						# OS Rename File
-
-						# Edit Data in listmodel
+						# OS Rename
+						if os.getenv('KPENV') == 20:
+							os.rename(item, _item_fullpath_new)
+						
+						# Model Rename
+						self.listmodel.setData(self.listmodel.index(idx), _item_fullpath_new)
 
 						log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item[0], _item_name_new) + col.ENDLN)
 						_num_renamed += 1
@@ -697,21 +709,26 @@ class RT_ConventionalBox(QtWidgets.QWidget):
 		super(RT_ConventionalBox, self).__init__()
 
 		# Create Widgets
-		self.description = QtWidgets.QLabel("Reaneme with a naming convention with token: <b>$[token]</b> (hover for tooltip)")
+		self.description = QtWidgets.QLabel("Reaneme with a naming convention with token: <b>$token</b> (hover for tooltip)")
 		## Option Boxs
 		self.format = RT_OptionBox("format (name convention format)")
 		self.format.setPlaceholderText("ie. $show_$shot_$type_$res_$name_v$version")
 		self.format.setToolTip("ie. $show_$shot_$type_$res_$name_v$version")
-		self.constant = RT_OptionBox("constant (define token that are not changed, seperated by ',' )")
+		self.format.setTextEdited(self.onFormatEdit)
+		self.constant = RT_OptionBox("constant")
+		self.constant.setToolTip("define token that are not changed, seperated by ','")
 		self.constant.setPlaceholderText("ie. show, shot, type, ...")
 		self.constant.setToolTip("without '$' ie. show, shot, type, ...")
-		self.dynamic = RT_OptionBox("dynamic (define tokens that are changed per item, seperated by ',')")
+		self.constant.setTextEdited(self.onKeywordsEdit)
+		self.dynamic = RT_OptionBox("dynamic")
+		self.dynamic.setToolTip("define tokens that are changed per item, seperated by ','")
 		self.dynamic.setPlaceholderText(" ie. name, ...")
 		self.dynamic.setToolTip("without '$' ie. name, ...")
+		self.dynamic.setTextEdited(self.onKeywordsEdit)
 		## Default Widgets
-		self.previewbox = RT_PreviewBoxDouble()
 		self.btn_rename = QtWidgets.QPushButton('START ENTERING VARIABLES')
 		self.btn_rename.setMinimumHeight(BTN_RENAME_HEIGHT)
+		self.btn_rename.clicked.connect(self.launch)
 
 		# Define Layouts
 		self.layout_master = QtWidgets.QVBoxLayout()
@@ -724,9 +741,41 @@ class RT_ConventionalBox(QtWidgets.QWidget):
 		self.layout_optionbox.addWidget(self.dynamic, 2, 0)
 		addModesBoxDefaultWidgets(self, hasPreviewbox=False)
 
-	def set_constants(self):
+	def onFormatEdit(self):
+		'''when format optionbox is edited'''
+
+		_str_format = self.format.value()
+		_ls_keywords = utl.lexer(_str_format)
+		self.constant.setValue(', '.join(_ls_keywords))
+
+	def onKeywordsEdit(self):
+		'''when Constant and Dynamic Option Box is edited'''
+		self.KEYWORDSOK = False
+		_str_format = self.format.value()
+		_ls_keywords = utl.lexer(_str_format)
+
+		_this_keywords = utl.lexer(self.sender().text().strip(), token=',')
+
+		# Check Keywords states ok
+		if utl.listInclude(_this_keywords, _ls_keywords):
+
+			# Check if there is conflict between
+			_ls_constant = utl.lexer(self.constant.value().strip(), token=',')
+			_ls_dynamic = utl.lexer(self.dynamic.value().strip(), token=',')
+
+			self.KEYWORDSOK = True if not utl.listConflict(_ls_constant, _ls_dynamic) else False
+		else:
+			self.KEYWORDSOK = False
+			log.error("optionbox " + self.sender().parent().get_label()+" contains illegal keywards")
+
+		self.btn_rename.setEnabled(self.KEYWORDSOK)
+
+	def launch(self):
 		'''open Constant Box'''
-		ctn_constant = RT_ConstantBox(self.format.text(), self.constant.text())
+		ctn_constant = RT_ConstantBox(self.listmodel, utl.lexer(self.constant.value().strip(), token=','), parent=self)
+		_end = ctn_constant.launch()
+
+		log.debug(_end)
 
 	def __str__(self):
 		'''string prepresentation'''
@@ -735,27 +784,34 @@ class RT_ConventionalBox(QtWidgets.QWidget):
 
 class RT_ConstantBox(QtWidgets.QDialog):
 	'''Constent Box for Conventional mode'''
-	def __init__(self, str_format, str_constant):
+	def __init__(self, listmodel, ls_constant, parent=None):
 		''' parse str_constant and build Optionbox
-		@format: (str) name convention format input
-		@str_constant: (str) raw string inputs for constants
+		@listmodel: (obj) model object
+		@ls_constant: (list of str) list of constant keywords for construct constant optionbox
 		'''
-		self.str_format = str_format
-		self.str_constant = str_constant
+		self.listmodel = listmodel
+		self.parent = parent
+		self.str_format = parent.format.value()
+		log.debug("passed on format: %s" % self.str_format)
+		self.ls_constant = ls_constant
+		self.str_dynamic = parent.dynamic.value()
+		self.PREVIEWOK = False
+		self.RENAMED = False
 		super(RT_ConstantBox, self).__init__()
 
 		self.label = QtWidgets.QLabel("<b>Set Constant Values</b>")
 		self.preview = RT_PreviewBox()
+		self.preview.set_preview(self.str_format)
 		self.buttonset = RT_ButtonSet("SET CONSTANT")
+		self.buttonset.get_button_main().setEnabled(self.PREVIEWOK)
 		self.buttonset.connect_main(self.set_dynamic)
-		self.buttonset.connect_cancel(self.reject)
+		self.buttonset.connect_cancel(self.close)
 
 		self.layout_master = QtWidgets.QVBoxLayout()
 		self.setLayout(self.layout_master)
 		self.layout_optionbox = QtWidgets.QGridLayout()
 
-		self.ls_constant = self.str_constant.split(',')
-		populateGridWidgets(self.layout_optionbox, self.ls_constant)
+		populateGridWidgets(self.layout_optionbox, self.ls_constant, self.onPreviewEdit)
 
 		self.layout_master.addWidget(self.label)
 		self.layout_master.addLayout(self.layout_optionbox)
@@ -766,10 +822,29 @@ class RT_ConstantBox(QtWidgets.QDialog):
 
 		self.preview.set_preview(self.str_format)
 
-	def set_dynamic(self):
-		'''sets the dynamic values'''
-		self.ctn_constant = self.get_optionbox_values()
+		self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
 
+	def onPreviewEdit(self):
+		'''update previewbox when optionbox is edited'''
+		sender = self.sender().parent()
+		dict_preplace = self.get_optionbox_values() 
+
+		if sender.value() != '':
+			self.PREVIEWOK = True
+			self.preview.set_preview(utl.parser(self.str_format, dict_preplace))
+
+			# Check if all optionbox is empty
+			for k,v in self.get_optionbox_values().items():
+				if v == '':
+					self.PREVIEWOK = False
+					break
+		else:
+			self.PREVIEWOK = False
+			self.preview.error()
+			log.error("%s empty" % sender.get_label())
+		
+		self.buttonset.get_button_main().setEnabled(self.PREVIEWOK)
+	
 	def get_optionbox_values(self):
 		'''get the values inside the option box
 		return: (dict) [label]: value
@@ -785,9 +860,180 @@ class RT_ConstantBox(QtWidgets.QDialog):
 		
 		return _dict
 
+	def set_dynamic(self):
+		'''pops up a Dynamic Box per item and rename'''
+
+		if self.PREVIEWOK:
+			self.values_constant = self.get_optionbox_values()
+			log.debug("Constant Values:\n%s" % self.values_constant)
+
+			ls_items = self.listmodel.get_items()
+			# self.setVisible(False)
+			
+			for idx, item in enumerate(ls_items):
+				log.debug("Launching Dynamic Box")
+
+				self.ctn_dynamic = RT_DynamicBox(self.listmodel, self.values_constant, item, idx, len(ls_items), constant_box=self)
+				renamed_item = self.ctn_dynamic.launch()
+				
+				log.debug("Renamed: %s" % os.path.basename(renamed_item))
+
+			# self.setVisible(True)
+			msgbox = QtWidgets.QMessageBox()
+			msgbox.setText("Rename Done!")
+			msgbox.exec()
+
+			log.debug(col.BOLD + "Dynamic Box Closed, Rename done" + col.ENDLN)
+		else:
+			log.error("Fail to generate preview, Please check optionboxes")
+
+	def launch(self):
+		log.debug("Launching Constant Box")
+		self.exec_()
+		log.debug("Constant Box closed")
+		return "Launched Constant Box and closed"
+
 	def __str__(self):
 		'''string prepresentation'''
 		return "RenameTool Constant Box"
+
+
+class RT_DynamicBox(QtWidgets.QDialog):
+	'''Constent Box for Conventional mode'''
+	def __init__(self, listmodel, value_constant, cur_item, cur_idx, num_items, constant_box=None):
+		''' parse str_Dynamic and build Optionbox
+		@listmodel: (obj) listmodel object
+		@value_constant: (dict) constant value inheritend from Constant Box
+		@constant_box: (obj) constant_box object, supposely RT_ConstantBox
+		'''
+		self.listmodel = listmodel
+		self.constant_box = constant_box
+		self.str_format_constant = self.constant_box.preview.get_preview()
+		self.str_dynamic = self.constant_box.str_dynamic
+		self.cur_item = cur_item
+		self.PREVIEWOK = False
+		self.SKIPPED = False
+		self.RENAMED = False
+		self.item_new = None
+		self.cur_idx = cur_idx
+		super(RT_DynamicBox, self).__init__()
+
+		self.label = QtWidgets.QLabel("<b>Set Dynamic Values</b>")
+		self.cur_item_label = QtWidgets.QLabel("Rename item: %s/%s" % (self.cur_idx+1, num_items))
+		self.progressbar = QtWidgets.QProgressBar()
+		self.progressbar.setRange(0, num_items)
+		self.progressbar.setValue(cur_idx+1)
+		self.progressbar.setTextVisible(False)
+		self.progressbar.setMaximumHeight(9)
+		self.preview = RT_PreviewBoxDouble()
+		self.preview.set_orig(os.path.basename(self.cur_item))
+		self.buttonset = RT_ButtonSet("SET DYNAMIC")
+		self.buttonset.get_button_main().setEnabled(False)
+		self.buttonset.connect_main(self.set_dynamic)
+		self.buttonset.get_button_cancel().setText("SKIP")
+		self.buttonset.connect_cancel(self.skip)
+
+		self.layout_master = QtWidgets.QVBoxLayout()
+		self.setLayout(self.layout_master)
+		self.layout_optionbox = QtWidgets.QGridLayout()
+
+		self.ls_dynamic = self.str_dynamic.split(',')
+		populateGridWidgets(self.layout_optionbox, self.ls_dynamic, self.onPreviewEdit)
+
+		self.layout_master.addWidget(self.label)
+		self.layout_master.addWidget(self.cur_item_label)
+		self.layout_master.addLayout(self.layout_optionbox)
+		self.layout_master.addStretch(10)
+		self.layout_master.addWidget(divider())
+		self.layout_master.addWidget(self.preview)
+		self.layout_master.addWidget(self.buttonset)
+		self.layout_master.addWidget(self.progressbar)
+
+		self.preview.set_preview(self.str_format_constant)
+
+		self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+
+	def onPreviewEdit(self):
+		'''update previewbox when optionbox is edited'''
+		sender = self.sender().parent()
+		dict_preplace = self.get_optionbox_values()
+		item_name, item_ext = os.path.splitext(self.cur_item)
+
+		if sender.value() != '':
+			self.PREVIEWOK = True
+			self.preview.set_preview(utl.parser(self.str_format_constant, dict_preplace) + item_ext)
+			
+			# Check if all optionbox is empty
+			for k,v in self.get_optionbox_values().items():
+				if v == '':
+					self.PREVIEWOK = False
+					break
+		else:
+			self.PREVIEWOK = False
+			self.preview.error()
+			log.error("%s empty" % sender.get_label())
+
+		
+		self.buttonset.get_button_main().setEnabled(self.PREVIEWOK)
+
+	def set_dynamic(self):
+		'''sets the dynamic values'''
+		# self.ctn_dynamic = self.get_optionbox_values()
+		item_fullpath, item_ext = os.path.splitext(self.cur_item)
+		item_dir = os.path.dirname(item_fullpath)
+		item_name = os.path.basename(item_fullpath)
+		log.debug("current item: %s" % item_name)
+		item_name_new = utl.parser(self.str_format_constant, self.get_optionbox_values()) + item_ext
+		self.item_new = utl.joinPath(item_dir, item_name_new) # Absolute path
+		try:
+			# OS Rename
+			if os.getenv('KPENV') == 20:
+				os.rename(item, self.item_new)
+			
+			# Model Rename
+			self.listmodel.setData(self.listmodel.index(self.cur_idx), self.item_new)
+
+			self.RENAMED = True
+			log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item_name, item_name_new) + col.ENDLN)
+		except Exception as error:
+			log.error("Fail to rename: \n%s" % error)
+			log.info(col.fg.MAGENTA + "skipped: %s%s" % (col.RESET, item_name+item_ext))
+			self.SKIPPED = True
+			self.RENAMED = False
+
+		self.close()
+
+	def get_optionbox_values(self):
+		'''get the values inside the option box
+		return: (dict) [label]: value
+		'''
+
+		_dict = {}
+		_ls_optionbox = [self.layout_optionbox.itemAt(i).widget() for i in range(self.layout_optionbox.count())]
+		for p in _ls_optionbox:
+			_dict[p.get_label().strip()] = p.value().strip()
+			log.debug("Get Dynamic box values | %s: %s" % (p.get_label(), p.value())) 
+		
+		return _dict
+
+	def launch(self):
+		'''launching dynamic box per item'''
+		self.exec_()
+		if self.RENAMED and self.SKIPPED == False:
+			return self.item_new
+		else:
+			return self.cur_item
+
+	def skip(self):
+		'''user skipped'''
+		self.RENAMED = False
+		self.SKIPPED = True
+		log.info(col.fg.MAGENTA + "skipped: %s%s" % (col.RESET, self.cur_item))
+		self.close()
+
+	def __str__(self):
+		'''string prepresentation'''
+		return "RenameTool Dynamic Box"
 
 
 class RT_OptionBox(QtWidgets.QWidget):
@@ -825,7 +1071,7 @@ class RT_OptionBox(QtWidgets.QWidget):
 		if (event.type() == QtCore.QEvent.FocusOut 
 			and obj is self.inputfield 
 			and self.inputfield.text() == ''):
-			log.debug("Optionbox focus out")
+			# log.debug("Optionbox focus out")
 			self.inputfield.textChanged.emit(self.inputfield.text())
 			self.inputfield.textEdited.emit(self.inputfield.text())
 			# self.inputfield.editingFinished.emit(self.inputfield.text())
@@ -897,12 +1143,12 @@ class RT_PreviewBox(QtWidgets.QWidget):
 
 	def error(self):
 		'''set text when there is error generate preview'''
-		self.main.setTest("""<b style="color:red;">FAIL TO GENERATE PREVIEW</b>""")
+		self.main.setText("""<b style="color:red;">FAIL TO GENERATE PREVIEW</b>""")
 		return False
 
 	def reset(self):
 		'''set text when list viewselection is changed'''
-		self.main.setTest("""<b style="color:blue;">PREVIEW RESET</b>""")
+		self.main.setText("""<b style="color:blue;">PREVIEW RESET</b>""")
 		return False
 
 
@@ -1004,8 +1250,6 @@ class RT_ButtonSet(QtWidgets.QWidget):
 		return self.cancel
 
 
-
-
 class divider(QtWidgets.QFrame):
 	def __init__(self):
 		super(divider, self).__init__()
@@ -1037,7 +1281,7 @@ def addModesBoxDefaultWidgets(obj, preview_obj=None, hasPreviewbox=True):
 	obj.layout_master.addWidget(divider())
 	obj.layout_master.addWidget(obj.btn_rename)
 
-def populateGridWidgets(layout, ls_widgetname, num_column=3):
+def populateGridWidgets(layout, ls_widgetname, func, num_column=3):
 	'''populating widgets in a grid layout
 	@layout: (obj) layout object
 	@ls_widgetname: (list of str) list of widget names
@@ -1056,6 +1300,7 @@ def populateGridWidgets(layout, ls_widgetname, num_column=3):
 
 			log.debug("widget: %s; \tindex: %s; row: %s; col: %s" % (w, i, _row, i % num_column))
 			exec("""ctn_optionbox_{0} = RT_OptionBox('{0}')""".format(w))
+			eval("ctn_optionbox_{}".format(w)).setTextEdited(func)
 			layout.addWidget(eval("ctn_optionbox_{}".format(w)), _row, i % num_column)
 	else:
 		log.error("%s not a Grid Layout object")

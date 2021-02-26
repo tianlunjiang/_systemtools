@@ -56,9 +56,8 @@ test_format = '$show_$shot_$type_$res_$name_v$version'
 test_constant = 'show, shot, type, res'
 test_dynamic = 'name, version'
 
-widget = ui.RT_ConstantBox(test_format, test_constant)
-result = widget.exec()
-log.debug(result)
+widget = ui.RT_ConventionalBox(test_format, test_constant)
+widget.show()
 app.exec_(sys.exit())
 
 # _row = 0

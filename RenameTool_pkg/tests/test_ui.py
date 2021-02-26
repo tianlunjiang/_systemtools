@@ -70,7 +70,7 @@ box_ctn = Ui_RenameTool.get_box_ctn()
 box_ctn.format.setValue(test_format)
 box_ctn.constant.setValue(test_constant)
 box_ctn.dynamic.setValue(test_dynamic)
-
+ 
 # model = Ui_RenameTool.get_listmodel()
 # log.debug(model.data(model.index(0,0), QtCore.Qt.ToolTipRole))
 # log.debug(model.ls_items[0])
