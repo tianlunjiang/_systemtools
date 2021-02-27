@@ -3,9 +3,9 @@
 Rename Tool with file drag and drop and naming convension feature
 
 ## Features
-- Features
-- Features
-- Features
+- Drag and Drop files in to list
+- 3 modes: Sequencial, Subsititutional and Conventional
+- Preview rename that also checks rename error
 
 
 ## Package Content
@@ -18,16 +18,23 @@ Package structure primary follows Python guidlines with few adjustments
   - **`__main__.py`**: main executable
   - **`RenameTool/`**: main module
     - **`ui/`**: main ui module
+      - `ui_main.py`: main ui module
     - **`resources/`**: resources files ie. images, help documents, etc
     - **`utility/`**: any supporting utility functions and modules
       - `__init__.py`: main utility functions goes here, unless specific
+    - `kplogger.py`: logger object module
   - **`tests/`**: unit test files
     - `test_main.py`
+  - `exe.bat`: running RenameTool in Windows
   - `Qt.py`: PyQt module
   - `README.md`: Readme file, module description
   - `requirements.txt`: dependencies manifest
   - `LICENSE`: license file
   - `config.json`: *(optional)* settings and configeration file
+
+## Dependencies
+- Python 3+
+- PyQt5
 
 ## Running Test
 Test modules lives in `~/tests/`. It is setup to run as an module, so to run test, do the following steps:
@@ -179,4 +186,4 @@ ThisClass = Core_ThisClass()
 
 ---
 
-**Copyright © Tianlun Jiang**
+**Copyright © Tianlun Jiang - jiangovfx.com**

@@ -76,7 +76,7 @@ class Ui_RenameTool(object):
 
 		# Define Widgets and Properties
 		## Listview and QStringListModel
-		self.parent.listview = RT_ListView()
+		self.parent.listview = RT_ListView(parent=self.parent)
 		## QStringListModel
 		# self.parent.listmodel = QtCore.QStringListModel()
 		# self.parent.listmodel.setStringList(self.ls_items)
@@ -189,16 +189,17 @@ class RT_ListModel(QtCore.QAbstractListModel):
 
 	def data(self, index, role):
 		row = index.row()
-		item = self.ls_items[row]
+		if len(self.ls_items) > 0:
+			item = self.ls_items[row]
 
-		if role == QtCore.Qt.DecorationRole:
-			return self.get_os_icon(item)
-		
-		if role == QtCore.Qt.DisplayRole:
-			return os.path.basename(item)
+			if role == QtCore.Qt.DecorationRole:
+				return self.get_os_icon(item)
+			
+			if role == QtCore.Qt.DisplayRole:
+				return os.path.basename(item)
 
-		if role == QtCore.Qt.ToolTipRole:
-			return item
+			if role == QtCore.Qt.ToolTipRole:
+				return item
 
 
 	def headerData(self, section, orientation, role):
@@ -222,6 +223,16 @@ class RT_ListModel(QtCore.QAbstractListModel):
 			return self.get_os_icon(item)
 		
 		return False
+
+	def insertRows(self, row, ls_item, parent = QtCore.QModelIndex()):
+		self.beginInsertRows(parent, row, int(row+len(ls_item)-1))
+
+		for i in range(len(ls_item)):
+			item = ls_item[i]
+			self.ls_items.append(item)
+			log.info(col.fg.GREEN+"Item added: "+ col.RESET + os.path.basename(item))
+
+		self.endInsertRows()
 
 	def removeRows(self, row, count, parent = QtCore.QModelIndex()):
 		self.beginRemoveRows(parent, row, int(row+count-1))
@@ -277,41 +288,57 @@ class RT_ListModel(QtCore.QAbstractListModel):
 
 class RT_ListView(QtWidgets.QListView):
 	'''custom list view'''
-	def __init__(self):
+	def __init__(self, parent = None):
+		'''
+		@dirbox: (obj) Directory Box
+		'''
 		super(RT_ListView, self).__init__()
+		self.parent = parent
 		self.setAcceptDrops(True)
 		self.setMinimumHeight(200)
 		# self.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 		self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
-	# def dragEnterEvent(self, event):
-    #     if event.mimeData().hasUrls:
-    #         event.accept()
-    #     else:
-    #         event.ignore()
+	def dragEnterEvent(self, event):
+		if event.mimeData().hasUrls:
+			event.accept()
+		else:
+			event.ignore()
 
-    # def dragMoveEvent(self, event):
-    #     if event.mimeData().hasUrls():
-    #         event.setDropAction(Qt.CopyAction)
-    #         event.accept()
-    #     else:
-    #         event.ignore()
+	def dragMoveEvent(self, event):
+		if event.mimeData().hasUrls():
+			event.setDropAction(QtCore.Qt.CopyAction)
+			event.accept()
+		else:
+			event.ignore()
 
-    # def dropEvent(self, event):
-    #     if event.mimeData().hasUrls():
-    #         event.setDropAction(Qt.CopyAction)
-    #         event.accept()
+	def dropEvent(self, event):
+		if event.mimeData().hasUrls():
+			event.setDropAction(QtCore.Qt.CopyAction)
+			event.accept()
 
-    #         links = []
-    #         for url in event.mimeData().urls():
-    #             # https://doc.qt.io/qt-5/qurl.html
-    #             if url.isLocalFile():
-    #                 links.append(os.path.basename(str(url.toLocalFile())))
-    #             else:
-    #                 links.append(os.path.basename(str(url.toString())))
-    #         self.addItems(links)
-    #     else:
-    #         event.ignore()
+			model = self.model()
+			model.clearList()
+			log.info("Listview Cleared")
+			
+			log.info("Start Insert files")
+			ls_items = []
+			for url in event.mimeData().urls():
+				# https://doc.qt.io/qt-5/qurl.html
+				if url.isLocalFile():
+					ls_items.append(str(url.toLocalFile()))
+				else:
+					log.debug("skipped: " + url)
+			
+			model.insertRows(0, ls_items)
+			log.info(col.msg.DONE)
+
+			self.dirbox = self.parent.dirbox
+			self.dirbox.set_directory()
+			log.info("Set Directory to: %s" % self.dirbox.get_directory())
+		
+		else:
+			event.ignore()
 
 
 class RT_DirBox(QtWidgets.QWidget):
@@ -363,7 +390,11 @@ class RT_DirBox(QtWidgets.QWidget):
 		try: 
 			self.inputfield.setText(os.path.dirname(self.listmodel.get_item_at(0)))
 		except:
-			log.error("Can't find first item in the list or no model set")
+			if len(self.listmodel.get_items()) > 0:
+				log.error("Can't find first item in the list or model set failed")
+
+	def get_directory(self):
+		return self.inputfield.text()
 
 	def __str__(self):
 		'''string representation'''
@@ -379,6 +410,7 @@ class RT_SequencialBox(QtWidgets.QWidget):
 		self.listview = listview
 		self.listmodel = self.listview.model()
 		self.PREVIEWOK = False
+		self.str_format = "{prefix}{idf}{basename}{idf}{suffix}{seq}{ext}"
 		super(RT_SequencialBox, self).__init__()
 
 		# Create Widgets
@@ -391,18 +423,19 @@ class RT_SequencialBox(QtWidgets.QWidget):
 		self.start_idx = RT_OptionBox('start index', '1')
 		self.padding = RT_OptionBox('padding', '3')
 
-		self.prefix.setTextEditingFinished(self.onPreviewEdit)
-		self.basename.setTextEditingFinished(self.onPreviewEdit)
-		self.identifier.setTextEditingFinished(self.onPreviewEdit)
-		self.suffix.setTextEditingFinished(self.onPreviewEdit)
-		self.start_idx.setTextEditingFinished(self.onPreviewEdit)
-		self.padding.setTextEditingFinished(self.onPreviewEdit)
+		self.prefix.setTextEdited(self.onPreviewEdit)
+		self.basename.setTextEdited(self.onPreviewEdit)
+		self.identifier.setTextEdited(self.onPreviewEdit)
+		self.suffix.setTextEdited(self.onPreviewEdit)
+		self.start_idx.setTextEdited(self.onPreviewEdit)
+		self.padding.setTextEdited(self.onPreviewEdit)
 		## Default Widgets
 		self.previewbox = RT_PreviewBox()
 		self.previewbox.set_preview(self.listmodel.get_first_item())
 		self.btn_rename = QtWidgets.QPushButton('RENAME SEQUNCIALLY')
 		self.btn_rename.setMinimumHeight(BTN_RENAME_HEIGHT)
 		self.btn_rename.clicked.connect(self.onRename)
+		self.btn_rename.setEnabled(self.PREVIEWOK)
 
 		# Define Layouts
 		self.layout_master = QtWidgets.QVBoxLayout()
@@ -417,6 +450,8 @@ class RT_SequencialBox(QtWidgets.QWidget):
 		self.layout_optionbox.addWidget(self.start_idx, 1, 2, 1, 1)
 		self.layout_optionbox.addWidget(self.padding, 1, 3, 1, 1)
 		addModesBoxDefaultWidgets(self, self.previewbox)
+
+		self.onPreviewEdit()
 
 	def onRename(self):
 		'''when rename button is pressed'''
@@ -446,8 +481,8 @@ class RT_SequencialBox(QtWidgets.QWidget):
 					# log.debug("Fullpath Reconstruct: %s -> %s" % (item[1], _item_fullpath_new))
 					
 					# OS Rename
-					if os.getenv('KPENV') == 20:
-						os.rename(item, _item_fullpath_new)
+					if os.getenv('KPENV') == '20':
+						os.rename(item[1], _item_fullpath_new)
 					
 					# Model Rename
 					self.listmodel.setData(self.listmodel.index(idx), _item_fullpath_new)
@@ -463,23 +498,37 @@ class RT_SequencialBox(QtWidgets.QWidget):
 
 	def onPreviewEdit(self):
 		'''when option box is edited'''
+
 		try:
-			if self.sender().text() == '':
-				log.error("Please enter a value in optionbox: %s" % self.sender().parent().get_label())
-				self.PREVIEWOK = self.previewbox.error()
-				log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
-			else: 
-				item_renamed = self.rename_seq(
-					self.listmodel.get_first_item(), 
-					self.get_optionbox_values()
-					)
-				self.previewbox.set_preview(item_renamed)
-				self.PREVIEWOK = True
-				log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
-		except Exception as error:
-			self.PREVIEWOK = self.previewbox.error()
-			log.error("error generating preview, check option box inputs\n%s" % error)
-			log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
+			if isinstance(self.sender().parent(), RT_OptionBox):
+
+				sender = self.sender().parent()
+
+				# Build str_format based on inputs
+				base_format = "%s{basename}{idf}%s{seq}{ext}"
+				value_optionbox = self.get_optionbox_values()
+				# log.debug(value_optionbox)
+				str_prefix = '{prefix}{idf}' if (value_optionbox['prefix'] != '') else ''
+				str_suffix = '{suffix}' if (value_optionbox['suffix'] != '') else ''
+				self.str_format = base_format % (str_prefix, str_suffix)
+				# log.debug(self.str_format)
+
+				if sender.value() == '' and sender.get_label() not in ['prefix', 'suffix']:
+					log.error("Please enter a value in optionbox: %s" % sender.get_label())
+					self.PREVIEWOK = self.previewbox.error()
+					log.debug("generated preview: " + ("successful" if self.PREVIEWOK else "fail"))
+				else:
+					item_renamed = self.rename_seq(
+						self.listmodel.get_first_item(), 
+						self.get_optionbox_values()
+						)
+					self.previewbox.set_preview(item_renamed)
+					self.PREVIEWOK = True
+					log.debug("generated preview: " + ("successful" if self.PREVIEWOK else "fail"))
+
+			self.btn_rename.setEnabled(self.PREVIEWOK)
+		except AttributeError:
+			log.debug("Initilize Sequncial Mode UI")
 
 	def rename_seq(self, item, value_optionbox, idx=0):
 		'''rename per item, meant to use within a loop
@@ -492,7 +541,7 @@ class RT_SequencialBox(QtWidgets.QWidget):
 		item_basename, item_ext = os.path.splitext(item)
 		cur_seq = str(value_optionbox['start index']+idx).zfill(value_optionbox['padding'])
 
-		item_renamed = "{prefix}{idf}{basename}{idf}{suffix}{seq}{ext}".format(
+		item_renamed = self.str_format.format(
 			prefix=value_optionbox['prefix'],
 			basename=value_optionbox['basename'],
 			idf=value_optionbox['identifier'],
@@ -591,8 +640,8 @@ class RT_SubstitutionalBox(QtWidgets.QWidget):
 						# log.debug("Fullpath Reconstruct: %s -> %s" % (item[1], _item_fullpath_new))
 						
 						# OS Rename
-						if os.getenv('KPENV') == 20:
-							os.rename(item, _item_fullpath_new)
+						if os.getenv('KPENV') == '20':
+							os.rename(item[1], _item_fullpath_new)
 						
 						# Model Rename
 						self.listmodel.setData(self.listmodel.index(idx), _item_fullpath_new)
@@ -729,6 +778,7 @@ class RT_ConventionalBox(QtWidgets.QWidget):
 		self.btn_rename = QtWidgets.QPushButton('START ENTERING VARIABLES')
 		self.btn_rename.setMinimumHeight(BTN_RENAME_HEIGHT)
 		self.btn_rename.clicked.connect(self.launch)
+		self.btn_rename.setEnabled(self.PREVEWOK)
 
 		# Define Layouts
 		self.layout_master = QtWidgets.QVBoxLayout()
@@ -987,7 +1037,7 @@ class RT_DynamicBox(QtWidgets.QDialog):
 		self.item_new = utl.joinPath(item_dir, item_name_new) # Absolute path
 		try:
 			# OS Rename
-			if os.getenv('KPENV') == 20:
+			if os.getenv('KPENV') == '20':
 				os.rename(item, self.item_new)
 			
 			# Model Rename
@@ -1085,7 +1135,8 @@ class RT_OptionBox(QtWidgets.QWidget):
 			try: 
 				return int(self.inputfield.text())
 			except ValueError:
-				log.error("Can't convert '%s' to an integer" % self.inputfield.text())
+				log.error("Can't convert '%s' to an integer, return ''" % self.inputfield.text())
+				return ''
 		else:
 			return self.inputfield.text().strip()
 
