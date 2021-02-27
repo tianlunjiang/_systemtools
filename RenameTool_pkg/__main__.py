@@ -15,7 +15,7 @@ main executable as a package
 
 
 import sys
-from .RenameTool import Core_RenameTool
+from .RenameTool import Core_RenameTool, __TITLE__
 from Qt import QtWidgets, QtGui, QtCore
 
 
@@ -30,10 +30,11 @@ from Qt import QtWidgets, QtGui, QtCore
 
 print("""
 ================================================
+%s
 Copyright (c) 2021 Tianlun Jiang - jiangovfx.com
 All Rights Reserved.
 ================================================
-""")
+""" % __TITLE__)
 
 
 app = QtWidgets.QApplication(sys.argv)
