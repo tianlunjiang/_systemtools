@@ -391,7 +391,7 @@ class RT_DirBox(QtWidgets.QWidget):
 			self.inputfield.setText(os.path.dirname(self.listmodel.get_item_at(0)))
 		except:
 			if len(self.listmodel.get_items()) > 0:
-				log.error("Can't find first item in the list or model set failed")
+				log.warning("Can't find first item in the list or model set failed")
 
 	def get_directory(self):
 		return self.inputfield.text()
@@ -489,12 +489,12 @@ class RT_SequencialBox(QtWidgets.QWidget):
 
 					log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item[0], _item_name_new) + col.ENDLN)
 				except OSError as err:
-					log.error("Fail to rename: %s | %s" % (item[0], err))
+					log.warning("Fail to rename: %s | %s" % (item[0], err))
 
 			log.info(col.msg.DONE)
 		
 		else:
-			log.error("Fail to Rename, check optionbox")
+			log.warning("Fail to Rename, check optionbox")
 
 	def onPreviewEdit(self):
 		'''when option box is edited'''
@@ -514,7 +514,7 @@ class RT_SequencialBox(QtWidgets.QWidget):
 				# log.debug(self.str_format)
 
 				if sender.value() == '' and sender.get_label() not in ['prefix', 'suffix']:
-					log.error("Please enter a value in optionbox: %s" % sender.get_label())
+					log.warning("Please enter a value in optionbox: %s" % sender.get_label())
 					self.PREVIEWOK = self.previewbox.error()
 					log.debug("generated preview: " + ("successful" if self.PREVIEWOK else "fail"))
 				else:
@@ -649,14 +649,14 @@ class RT_SubstitutionalBox(QtWidgets.QWidget):
 						log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item[0], _item_name_new) + col.ENDLN)
 						_num_renamed += 1
 					except OSError as err:
-						log.error("Fail to rename: %s | %s" % (item[0], err))
+						log.warning("Fail to rename: %s | %s" % (item[0], err))
 						continue
 
 			log.info(col.fg.GREEN + "\t\t%s Renamed" % _num_renamed + col.ENDLN)
 			log.info(col.msg.DONE)
 		
 		else:
-			log.error("Fail to Rename, check optionbox")
+			log.warning("Fail to Rename, check optionbox")
 
 	def onPreviewEdit(self):
 		'''when option box is edited'''
@@ -675,13 +675,13 @@ class RT_SubstitutionalBox(QtWidgets.QWidget):
 				if _sender.parent() is self.find:
 					log.debug("OptionBox: find")
 					if _sender.text() == '':
-						log.error("Please enter a value in optionbox: %s" % _sender.parent().get_label())
+						log.warning("Please enter a value in optionbox: %s" % _sender.parent().get_label())
 						self.PREVIEWOK = self.previewbox.error()
 						log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
 					# Check if input text is in orginal preview
 					elif _sender.text() not in self.previewbox.get_previews()[0]:
 						self.PREVIEWOK = self.previewbox.error()
-						log.error("Can't find %s in file name" % _sender.text())
+						log.warning("Can't find %s in file name" % _sender.text())
 					else:
 						self.PREVIEWOK = True
 						log.debug("%s in file name" % _sender.text())
@@ -697,7 +697,7 @@ class RT_SubstitutionalBox(QtWidgets.QWidget):
 					log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
 			except Exception as error:
 				self.PREVIEWOK = self.previewbox.error()
-				log.error("error generating preview, check option box inputs\n%s" % error)
+				log.warning("error generating preview, check option box inputs\n%s" % error)
 				log.debug("generated preview: " + "successful" if self.PREVIEWOK else "fail")
 		
 		if self.PREVIEWOK: self.btn_rename.setEnabled(True)
@@ -816,7 +816,7 @@ class RT_ConventionalBox(QtWidgets.QWidget):
 			self.KEYWORDSOK = True if not utl.listConflict(_ls_constant, _ls_dynamic) else False
 		else:
 			self.KEYWORDSOK = False
-			log.error("optionbox " + self.sender().parent().get_label()+" contains illegal keywards")
+			log.warning("optionbox " + self.sender().parent().get_label()+" contains illegal keywards")
 
 		self.btn_rename.setEnabled(self.KEYWORDSOK)
 
@@ -891,7 +891,7 @@ class RT_ConstantBox(QtWidgets.QDialog):
 		else:
 			self.PREVIEWOK = False
 			self.preview.error()
-			log.error("%s empty" % sender.get_label())
+			log.warning("%s empty" % sender.get_label())
 		
 		self.buttonset.get_button_main().setEnabled(self.PREVIEWOK)
 	
@@ -935,7 +935,7 @@ class RT_ConstantBox(QtWidgets.QDialog):
 
 			log.debug(col.BOLD + "Dynamic Box Closed, Rename done" + col.ENDLN)
 		else:
-			log.error("Fail to generate preview, Please check optionboxes")
+			log.warning("Fail to generate preview, Please check optionboxes")
 
 	def launch(self):
 		log.debug("Launching Constant Box")
@@ -1021,7 +1021,7 @@ class RT_DynamicBox(QtWidgets.QDialog):
 		else:
 			self.PREVIEWOK = False
 			self.preview.error()
-			log.error("%s empty" % sender.get_label())
+			log.warning("%s empty" % sender.get_label())
 
 		
 		self.buttonset.get_button_main().setEnabled(self.PREVIEWOK)
@@ -1038,7 +1038,7 @@ class RT_DynamicBox(QtWidgets.QDialog):
 		try:
 			# OS Rename
 			if os.getenv('KPENV') == '20':
-				os.rename(item, self.item_new)
+				os.rename(self.cur_item, self.item_new)
 			
 			# Model Rename
 			self.listmodel.setData(self.listmodel.index(self.cur_idx), self.item_new)
@@ -1046,7 +1046,7 @@ class RT_DynamicBox(QtWidgets.QDialog):
 			self.RENAMED = True
 			log.info(col.fg.GREEN + "Renamed: %s%s -> %s" % (col.RESET+col.BOLD, item_name, item_name_new) + col.ENDLN)
 		except Exception as error:
-			log.error("Fail to rename: \n%s" % error)
+			log.warning("Fail to rename: \n%s" % error)
 			log.info(col.fg.MAGENTA + "skipped: %s%s" % (col.RESET, item_name+item_ext))
 			self.SKIPPED = True
 			self.RENAMED = False
@@ -1135,7 +1135,7 @@ class RT_OptionBox(QtWidgets.QWidget):
 			try: 
 				return int(self.inputfield.text())
 			except ValueError:
-				log.error("Can't convert '%s' to an integer, return ''" % self.inputfield.text())
+				log.warning("Can't convert '%s' to an integer, return ''" % self.inputfield.text())
 				return ''
 		else:
 			return self.inputfield.text().strip()
@@ -1283,14 +1283,14 @@ class RT_ButtonSet(QtWidgets.QWidget):
 		@func: (function) function for main button
 		'''
 		try: self.main.clicked.connect(func)
-		except: log.error("Fail to connect main button to %s" % func)
+		except: log.warning("Fail to connect main button to %s" % func)
 
 	def connect_cancel(self, func):
 		'''set signal to connect main button
 		@func: (function) function for cancel button
 		'''
 		try: self.cancel.clicked.connect(func)
-		except: log.error("Fail to connect cancel button to %s" % func)
+		except: log.warning("Fail to connect cancel button to %s" % func)
 
 	def get_button_main(self):
 		'''return main button object'''
@@ -1354,7 +1354,7 @@ def populateGridWidgets(layout, ls_widgetname, func, num_column=3):
 			eval("ctn_optionbox_{}".format(w)).setTextEdited(func)
 			layout.addWidget(eval("ctn_optionbox_{}".format(w)), _row, i % num_column)
 	else:
-		log.error("%s not a Grid Layout object")
+		log.warning("%s not a Grid Layout object")
 
 
 

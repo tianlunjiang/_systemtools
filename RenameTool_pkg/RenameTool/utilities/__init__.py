@@ -41,28 +41,17 @@ def lexer(str_format, token='$'):
 	@token='$': token to seperate tokens
 	return: (list of str) list of keywords
 	'''
+	
+	if token == '$':
+		pattern = re.compile(r'\$\w[a-zA-Z0-9]+')
+		ls_out = [t.strip('$') for t in pattern.findall(str_format)]
+	else:
+		if token in str_format:
+			ls_out = str_format.split(token)
+		else:
+			ls_out = None
 
-	if token not in str_format:
-		return [str_format.strip()]
-
-	ls_cmpt = str_format.split(token)
-	ls_out = []
-	pattern_letter = re.compile('[^a-zA-Z0-9]')
-	# pattern_delimiters = re.compile('[$:/ ._]+')
-
-	log.debug("split cmpt: %s" % ls_cmpt)
-	for s in ls_cmpt:
-		if s != '':
-			s.strip()
-			k = re.split('[%s:/ ,._*#@^!()-]+' % token, s)
-			# _o = pattern_letter.sub('', s)
-			try: k.remove('')
-			except: pass
-			ls_out.append(k[0])
-
-			log.debug("trim cmpt: %s -> %s" % (s, k[0]))
-
-	log.info("lexer output: " + (str(ls_out) if len(ls_out)>0 else "CLEAR"))
+	log.debug("lexer output: " + (str(ls_out) if len(ls_out)>0 else "CLEAR"))
 
 	return ls_out
 
@@ -91,7 +80,7 @@ def parser(str_format, dict_replace, token='$'):
 
 	log.debug("keywards parsed: %s" % ', '.join(keywards_parsed))
 	log.debug("keywards remain: %s" % ', '.join(keywards_remain))
-	log.info("parsed output: " + str_format)
+	log.debug("parsed output: " + str_format)
 	
 	return str_format
 
