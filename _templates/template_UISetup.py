@@ -1,6 +1,6 @@
 '''
 
-UI elements for MODNAME (Replace MODNAME for actual name)
+UI elements for {MODULENAME}
 
 '''
 
@@ -39,30 +39,32 @@ FIELD_SIZE=60
 
 
 
-class Ui_MODNAME(object):
-    '''UI elements'''
+class ui_{MODULENAME}(object):
+	'''UI elements'''
 
-    def setupUi(self,core):
-        '''ui setup
-        @core: (object) Input object for setting up
-        '''
+	def setupUI(self,core):
+		'''ui setup
+		@core: (object) Input object for setting up
+		'''
 
-        # Define Widgets and Properties
+		self.core = core
 
-        # Define Layouts
+		# Define Widgets and Properties
 
-        # Assign Widgets to Layouts
+		# Define Layouts
 
-        # Window
-        core.setLayout(self.layout_master)
-        core.setWindowTitle()
-        core.setWindowFlags()
+		# Assign Widgets to Layouts
 
-    def run(self):
-        '''main run function'''
-        
-        core.show()
-        core.raise_()
+		# Window
+		self.core.setLayout(self.layout_master)
+		# core.setWindowTitle()
+		# core.setWindowFlags()
+
+	def run(self):
+		'''main run function'''
+		
+		self.core.show()
+		self.core.raise_()
 
 
 
@@ -75,18 +77,18 @@ class Ui_MODNAME(object):
 
 
 if __name__ == '__main__':
-    print("="*10)
-    print("\nTest UI for MODNAME\n")
-    print("="*10)
+	print("="*10)
+	print("\nTest UI for {MODULENAME}\n")
+	print("="*10)
 
-    app = QtWidgets.QApplication(sys.argv)
-    
-    # Test Widgets
-    core=QtWidgets.QWidget()
-    # Test Mod
-    Ui_MODNAME = Ui_MODNAME()
-    Ui_MODNAME.setupUi(core)
-    # Test Run
-    Ui_MODNAME.run()
-    
-    app.exec_()
+	app = QtWidgets.QApplication(sys.argv)
+	
+	# Test Widgets
+	core = QtWidgets.QWidget()
+	# Test Mod
+	ui_{MODULENAME} = ui_{MODULENAME}()
+	ui_{MODULENAME}.setupUI(core)
+	# Test Run
+	core.show()
+	
+	sys.exit(app.exec_())

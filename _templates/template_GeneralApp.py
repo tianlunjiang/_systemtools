@@ -28,12 +28,13 @@ from Qt import QtWidgets, QtGui, QtCore
 
 
 
-__VERSION__='1.0'
-__OS__=platform.system()
-__AUTHOR__="Tianlun Jiang"
-__COPYRIGHT__="copyright %s" % __AUTHOR__
+__VERSION__		= '1.0'
+__OS__			= platform.system()
+__AUTHOR__		= "Tianlun Jiang"
+__WEBSITE__		= "jiangovfx.com"
+__COPYRIGHT__	= "copyright (c) %s - %s" % (__AUTHOR__, __WEBSITE__)
 
-__TITLE__=os.path.basename(__file__).split('_')[1].split('.')[0]
+__TITLE__		= "{MODULENAME} v%s" % __VERSION__
 
 
 def _version_():
@@ -80,3 +81,27 @@ pass
 
 
 pass
+
+
+
+
+#------------------------------------------------------------------------------
+#-Run Instance
+#------------------------------------------------------------------------------
+
+
+
+
+if __name__ == '__main__':
+	print("="*10)
+	print("Ran as Main Module")
+	print("="*10)
+
+	app = QtWidgets.QApplication(sys.argv)
+	
+	# Test Mod
+	{MODULENAME} = {MODULENAME}()
+	# Test Run
+	{MODULENAME}.run()
+	
+	sys.exit(app.exec_())
