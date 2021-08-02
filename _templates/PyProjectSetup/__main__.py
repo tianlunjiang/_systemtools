@@ -73,7 +73,7 @@ add_FileHandler(log_file,
 
 
 
-DIR_TEMPLATE = "D:/Dropbox/REPOSITORIES/_systemtools/_templates/template_PyProject_pkg"
+DIR_TEMPLATE = "D:/Dropbox/REPOSITORIES/_kptools/_templates/template_PyProject_pkg"
 DIR_REPLACE = 'PyProject'
 
 

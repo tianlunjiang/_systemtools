@@ -33,7 +33,7 @@ __OS__=platform.system()
 __AUTHOR__="Tianlun Jiang"
 __COPYRIGHT__="copyright %s" % __AUTHOR__
 
-__TITLE__=os.path.basename(__file__).split('_')[1].split('.')[0]
+__TITLE__=os.path.basename(__file__).split('_')[0]
 
 
 def _version_():
