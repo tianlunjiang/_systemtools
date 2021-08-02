@@ -5,7 +5,9 @@ set KP_SCENE=%KP_SHOT:~0,3%
 set KP_SHOWDIR=k:/PROJECTS/Personal/%KP_SHOW%/
 set KP_SHOTDIR=k:/PROJECTS/Personal/%KP_SHOW%/%KP_SHOT%/
 set KP_SHELL=CMD
-set OCIO=K:\PROJECTS\_VFXtemplet\ocio-config\aces_1.0.3\config.ocio
+set KP_MAYADIR=%KP_SHOTDIR%workbench/maya/
+set OCIO=K:/PROJECTS/_VFXtemplet/ocio-config/aces_1.0.3/config.ocio
+set MAYA_PLUG_IN_PATH=D:/Dropbox/REPOSITORIES/_MayaStudio/
 
 set argC=0
 for %%x in (%*) do Set /A argC+=1
@@ -27,13 +29,13 @@ if %argC% == 2 (
             REM dir /ad /b
             ls
             echo =======================
-            echo - cdshot: shot dir
-            echo - cdshow: show dir
-            echo - cdnuke: nuke workbench dir
-            echo - cdmaya: maya workbench dir
-            echo - cdblender: blender workbench dir
-            echo - cdlgt:  lighting renders dir
-            echo - cddailies:  dailies dir
+            echo - cdshot:      shot dir
+            echo - cdshow:      show dir
+            echo - cdnuke:      nuke workbench dir
+            echo - cdmaya:      maya workbench dir
+            echo - cdblender:   blender workbench dir
+            echo - cdlgt:       lighting renders dir
+            echo - cddailies:   dailies dir
             echo - cddelivery:  delivery renders dir
             title %KP_SHOW%:%KP_SCENE%:%KP_SHOT%
 
