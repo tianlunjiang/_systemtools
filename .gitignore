@@ -3,3 +3,4 @@
 */__test__.py
 **/_testfiles
 **/*.log
+**/*.code-workspace
